@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2009, 2010 Cloudsmith Inc. and others.
+ * Copyright (c) 2009, 2026 Cloudsmith Inc. and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -112,11 +112,23 @@ public class RepositoryStatus {
 	}
 
 	public static DownloadStatus forStatus(IStatus original, URI toDownload) {
+		DownloadStatus status = forStatus0(original, toDownload);
+		status.setUri(toDownload);
+		return status;
+	}
+
+	private static DownloadStatus forStatus0(IStatus original, URI toDownload) {
 		Throwable t = original.getException();
-		return forException(t, toDownload);
+		return forException0(t, toDownload);
 	}
 
 	public static DownloadStatus forException(Throwable t, URI toDownload) {
+		DownloadStatus status = forException0(t, toDownload);
+		status.setUri(toDownload);
+		return status;
+	}
+
+	private static DownloadStatus forException0(Throwable t, URI toDownload) {
 		if (t instanceof FileNotFoundException || (t instanceof IncomingFileTransferException && ((IncomingFileTransferException) t).getErrorCode() == 404)) {
 			return new DownloadStatus(IStatus.ERROR, Activator.ID, ProvisionException.ARTIFACT_NOT_FOUND, NLS.bind(Messages.artifact_not_found, toDownload), t);
 		}

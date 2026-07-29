@@ -21,7 +21,7 @@ import org.junit.platform.suite.api.Suite;
  */
 @Suite
 @SelectClasses({ CacheManagerTest.class, RepositoryHelperTest.class, RepositoryExtensionPointTest.class,
-		FileReaderTest2.class, ChecksumHelperTest.class })
+		FileReaderTest2.class, ChecksumHelperTest.class, DownloadStatusTest.class })
 public class AllTests {
 	// test suite
 }

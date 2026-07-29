@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eclipse.equinox.internal.p2.repository;
 
+import java.net.URI;
 import org.eclipse.core.runtime.Status;
 
 /**
@@ -26,6 +27,7 @@ public class DownloadStatus extends Status {
 	private long speed = UNKNOWN_RATE;
 	private long fileSize = UNKNOWN_SIZE;
 	private long lastModified = 0;
+	private URI uri;
 
 	/**
 	 * Constructs a new DownloadStatus with the given attributes.
@@ -79,9 +81,30 @@ public class DownloadStatus extends Status {
 		return lastModified;
 	}
 
+	/**
+	 * Sets the URI this download status applies to.
+	 *
+	 * @param uri the URI that was downloaded, or {@code null} if not known
+	 */
+	public void setUri(URI uri) {
+		this.uri = uri;
+	}
+
+	/**
+	 * Returns the URI this download status applies to.
+	 *
+	 * @return the downloaded URI, or {@code null} if not known
+	 */
+	public URI getUri() {
+		return uri;
+	}
+
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(super.toString());
+		sb.append(' ');
+		sb.append("URI="); //$NON-NLS-1$
+		sb.append(getUri() == null ? "Unknown uri" : getUri()); //$NON-NLS-1$
 		sb.append(' ');
 		sb.append("LastModified="); //$NON-NLS-1$
 		sb.append(getLastModified());

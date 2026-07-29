@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2006, 2022 IBM Corporation and others.
+ * Copyright (c) 2006, 2026 IBM Corporation and others.
  * The code, documentation and other materials contained herein have been
  * licensed under the Eclipse Public License - v 1.0 by the copyright holder
  * listed above, as the Initial Contributor under such license. The text of
@@ -147,6 +147,7 @@ public class RepositoryTransport extends Transport {
 					String msg = NLS.bind(Messages.RepositoryTransport_failedReadRepo, secureToDownload);
 					DownloadStatus ds = new DownloadStatus(IStatus.ERROR, Activator.ID,
 							ProvisionException.REPOSITORY_FAILED_READ, msg, null);
+					ds.setUri(secureToDownload);
 					return statusOn(target, ds, reader);
 				}
 				if (result.getSeverity() == IStatus.CANCEL) {
@@ -158,12 +159,17 @@ public class RepositoryTransport extends Transport {
 
 				// Download status is expected on success
 				DownloadStatus status = new DownloadStatus(IStatus.OK, Activator.ID, Status.OK_STATUS.getMessage());
+				status.setUri(secureToDownload);
 				return statusOn(target, status, reader);
 			} catch (UserCancelledException e) {
-				statusOn(target, new DownloadStatus(IStatus.CANCEL, Activator.ID, 1, "", null), reader); //$NON-NLS-1$
+				DownloadStatus cancelStatus = new DownloadStatus(IStatus.CANCEL, Activator.ID, 1, "", null); //$NON-NLS-1$
+				cancelStatus.setUri(secureToDownload);
+				statusOn(target, cancelStatus, reader);
 				throw new OperationCanceledException();
 			} catch (OperationCanceledException e) {
-				statusOn(target, new DownloadStatus(IStatus.CANCEL, Activator.ID, 1, "", null), reader); //$NON-NLS-1$
+				DownloadStatus cancelStatus = new DownloadStatus(IStatus.CANCEL, Activator.ID, 1, "", null); //$NON-NLS-1$
+				cancelStatus.setUri(secureToDownload);
+				statusOn(target, cancelStatus, reader);
 				throw e;
 			} catch (CoreException e) {
 				if (e.getStatus().getException() == null) {
@@ -178,6 +184,7 @@ public class RepositoryTransport extends Transport {
 				DownloadStatus status = new DownloadStatus(IStatus.ERROR, Activator.ID,
 						ProvisionException.REPOSITORY_FAILED_AUTHENTICATION, //
 						NLS.bind(Messages.UnableToRead_0_UserCanceled, secureToDownload), null);
+				status.setUri(secureToDownload);
 				return statusOn(target, status, null);
 			} catch (JREHttpClientRequiredException e) {
 				if (!useJREHttp) {
@@ -191,6 +198,7 @@ public class RepositoryTransport extends Transport {
 		DownloadStatus status = new DownloadStatus(IStatus.ERROR, Activator.ID,
 				ProvisionException.REPOSITORY_FAILED_AUTHENTICATION, //
 				NLS.bind(Messages.UnableToRead_0_TooManyAttempts, secureToDownload), null);
+		status.setUri(secureToDownload);
 		return statusOn(target, status, null);
 	}
 
@@ -319,15 +327,27 @@ public class RepositoryTransport extends Transport {
 	}
 
 	public static DownloadStatus forStatus(IStatus original, URI toDownload) {
+		DownloadStatus status = forStatus0(original, toDownload);
+		status.setUri(toDownload);
+		return status;
+	}
+
+	private static DownloadStatus forStatus0(IStatus original, URI toDownload) {
 		Throwable t = original.getException();
 		if (isForgiveableException(t) && original.getCode() == IArtifactRepository.CODE_RETRY) {
 			return new DownloadStatus(original.getSeverity(), Activator.ID, original.getCode(), original.getMessage(),
-					t);
+				t);
 		}
-		return forException(t, toDownload);
+		return forException0(t, toDownload);
 	}
 
 	public static DownloadStatus forException(Throwable t, URI toDownload) {
+		DownloadStatus status = forException0(t, toDownload);
+		status.setUri(toDownload);
+		return status;
+	}
+
+	private static DownloadStatus forException0(Throwable t, URI toDownload) {
 		if (isForgiveableException(t)) {
 			int retry = Integer.getInteger(TIMEOUT_RETRY, 0);
 			if (retry > 0) {
