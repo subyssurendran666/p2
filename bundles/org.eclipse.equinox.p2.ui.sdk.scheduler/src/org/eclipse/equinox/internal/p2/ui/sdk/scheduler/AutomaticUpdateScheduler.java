@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008, 2017 IBM Corporation and others.
+ * Copyright (c) 2008, 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -56,8 +56,8 @@ public class AutomaticUpdateScheduler implements EventHandler {
 	public static final String[] FUZZY_RECURRENCE = { AutomaticUpdateMessages.SchedulerStartup_OnceADay,
 			AutomaticUpdateMessages.SchedulerStartup_OnceAWeek, AutomaticUpdateMessages.SchedulerStartup_OnceAMonth };
 
-	private static final int ONE_HOUR_IN_MS = 60 * 60 * 1000;
-	private static final int ONE_DAY_IN_MS = 24 * ONE_HOUR_IN_MS;
+	private static final long ONE_HOUR_IN_MS = 60 * 60 * 1000;
+	private static final long ONE_DAY_IN_MS = 24 * ONE_HOUR_IN_MS;
 
 	private IUpdateListener listener;
 	private IUpdateChecker checker;
@@ -213,12 +213,12 @@ public class AutomaticUpdateScheduler implements EventHandler {
 		if (now - lastCheckForUpdateSinceEpoch >= poll + getMaxDelay(pref)) {
 			// Last check for update has exceeded the max delay we allow,
 			// let's do it sometime in the next hour.
-			return new Random().nextInt(ONE_HOUR_IN_MS);
+			return new Random().nextLong(ONE_HOUR_IN_MS);
 		}
 		long delay = now - lastCheckForUpdateSinceEpoch;
 		// We do delay the next check sometime in the 8 hours after the computed
 		// schedule
-		return poll - delay + new Random().nextInt(8 * ONE_HOUR_IN_MS);
+		return poll - delay + new Random().nextLong(8 * ONE_HOUR_IN_MS);
 	}
 
 	private static long getMaxDelay(IPreferenceStore pref) {
