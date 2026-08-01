@@ -31,6 +31,7 @@ import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.viewers.*;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.*;
 import org.eclipse.swt.widgets.*;
@@ -49,6 +50,7 @@ public abstract class ResolutionResultsWizardPage extends ResolutionStatusPage {
 	protected IUElementListRoot input;
 	ProfileChangeOperation resolvedOperation;
 	TreeViewer treeViewer;
+	IUComparator comparator;
 	ProvElementContentProvider contentProvider;
 	IUDetailsLabelProvider labelProvider;
 	protected Display display;
@@ -124,6 +126,8 @@ public abstract class ResolutionResultsWizardPage extends ResolutionStatusPage {
 				return super.getToolTipText(element);
 			}
 		});
+		nameColumn.getColumn().addSelectionListener(
+				SelectionListener.widgetSelectedAdapter(e -> applySortSelection(tree, (TreeColumn) e.widget, IUComparator.IU_NAME)));
 		final int DEFAULT_COLUMN_WIDTH = 200;
 		// check the operation is for update or installation
 		boolean isUpdate = shouldShowAvailableVersionColumn() && resolvedOperation instanceof UpdateOperation;
@@ -144,6 +148,8 @@ public abstract class ResolutionResultsWizardPage extends ResolutionStatusPage {
 					return iu.getVersion().toString();
 				}
 			});
+			versionColumnOld.getColumn().addSelectionListener(
+					SelectionListener.widgetSelectedAdapter(e -> applySortSelection(tree, (TreeColumn) e.widget, IUComparator.IU_VERSION)));
 		}
 
 		TreeViewerColumn versionColumn = new TreeViewerColumn(treeViewer, SWT.LEFT);
@@ -162,6 +168,8 @@ public abstract class ResolutionResultsWizardPage extends ResolutionStatusPage {
 				return iu.getVersion().toString();
 			}
 		});
+		versionColumn.getColumn().addSelectionListener(
+				SelectionListener.widgetSelectedAdapter(e -> applySortSelection(tree, (TreeColumn) e.widget, IUComparator.IU_VERSION)));
 		TreeViewerColumn idColumn = new TreeViewerColumn(treeViewer, SWT.LEFT);
 		idColumn.getColumn().setText(ProvUIMessages.ProvUI_IdColumnTitle);
 		idColumn.getColumn().setWidth(DEFAULT_COLUMN_WIDTH);
@@ -173,12 +181,17 @@ public abstract class ResolutionResultsWizardPage extends ResolutionStatusPage {
 				return iu.getId();
 			}
 		});
+		idColumn.getColumn().addSelectionListener(
+				SelectionListener.widgetSelectedAdapter(e -> applySortSelection(tree, (TreeColumn) e.widget, IUComparator.IU_ID)));
 
 		// Filters and sorters before establishing content, so we don't refresh unnecessarily.
-		IUComparator comparator = new IUComparator(IUComparator.IU_NAME);
+		comparator = new IUComparator(IUComparator.IU_NAME);
 		comparator.useColumnConfig(getColumnConfig());
 		treeViewer.setComparator(comparator);
 		treeViewer.setComparer(new ProvElementComparer());
+		// Set the initial sort indicator on the Name column.
+		tree.setSortColumn(tree.getColumn(0));
+		tree.setSortDirection(SWT.UP);
 		ColumnViewerToolTipSupport.enableFor(treeViewer);
 		contentProvider = new ProvElementContentProvider();
 		treeViewer.setContentProvider(contentProvider);
@@ -364,5 +377,21 @@ public abstract class ResolutionResultsWizardPage extends ResolutionStatusPage {
 	@Override
 	protected SashForm getSashForm() {
 		return sashForm;
+	}
+
+	private void applySortSelection(Tree tree, TreeColumn tc, int sortKey) {
+		if (sortKey != comparator.getSortKey()) {
+			comparator.setSortKey(sortKey);
+			comparator.sortAscending();
+			tree.setSortDirection(SWT.UP);
+		} else if (comparator.isAscending()) {
+			comparator.sortDescending();
+			tree.setSortDirection(SWT.DOWN);
+		} else {
+			comparator.sortAscending();
+			tree.setSortDirection(SWT.UP);
+		}
+		tree.setSortColumn(tc);
+		treeViewer.refresh();
 	}
 }

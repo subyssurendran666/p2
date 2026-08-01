@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright (c) 2007, 2018 IBM Corporation and others.
+ *  Copyright (c) 2007, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -154,7 +154,7 @@ public class InstalledIUGroup extends StructuredIUGroup {
 		});
 
 		// Now the visuals, columns before labels.
-		setTreeColumns(installedIUViewer.getTree());
+		createSortableTreeColumns(installedIUViewer.getTree(), installedIUViewer, comparator);
 		installedIUViewer.setLabelProvider(new IUDetailsLabelProvider(null, getColumnConfig(), null));
 
 		// Input last.
@@ -168,18 +168,6 @@ public class InstalledIUGroup extends StructuredIUGroup {
 		installedIUViewer.getControl().addDisposeListener(
 				e -> ProvUI.getProvisioningEventBus(getProvisioningUI().getSession()).removeListener(listener));
 		return installedIUViewer;
-	}
-
-	private void setTreeColumns(Tree tree) {
-		IUColumnConfig[] columns = getColumnConfig();
-		tree.setHeaderVisible(true);
-
-		for (int i = 0; i < columns.length; i++) {
-			TreeColumn tc = new TreeColumn(tree, SWT.NONE, i);
-			tc.setResizable(true);
-			tc.setText(columns[i].getColumnTitle());
-			tc.setWidth(columns[i].getWidthInPixels(tree));
-		}
 	}
 
 	Object getInput() {

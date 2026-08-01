@@ -1,5 +1,5 @@
 /*******************************************************************************
- *  Copyright (c) 2008, 2018 IBM Corporation and others.
+ *  Copyright (c) 2008, 2026 IBM Corporation and others.
  *
  *  This program and the accompanying materials
  *  are made available under the terms of the Eclipse Public License 2.0
@@ -18,13 +18,16 @@ import java.util.List;
 import org.eclipse.equinox.internal.p2.ui.ProvUI;
 import org.eclipse.equinox.internal.p2.ui.model.ElementUtils;
 import org.eclipse.equinox.internal.p2.ui.viewers.IUColumnConfig;
+import org.eclipse.equinox.internal.p2.ui.viewers.IUComparator;
 import org.eclipse.equinox.p2.metadata.IInstallableUnit;
 import org.eclipse.equinox.p2.operations.ProvisioningSession;
 import org.eclipse.equinox.p2.ui.Policy;
 import org.eclipse.equinox.p2.ui.ProvisioningUI;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.viewers.StructuredViewer;
+import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.*;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -130,6 +133,49 @@ public abstract class StructuredIUGroup {
 
 	protected int convertHeightInCharsToPixels(int dlus) {
 		return Dialog.convertHeightInCharsToPixels(fm, dlus);
+	}
+
+	protected void createSortableTreeColumns(Tree tree, TreeViewer treeViewer, IUComparator comparator) {
+		tree.setHeaderVisible(true);
+		IUColumnConfig[] cols = getColumnConfig();
+		for (int i = 0; i < cols.length; i++) {
+			TreeColumn tc = new TreeColumn(tree, SWT.NONE, i);
+			tc.setResizable(true);
+			tc.setText(cols[i].getColumnTitle());
+			tc.setWidth(cols[i].getWidthInPixels(tree));
+			int sortKey = toSortKey(cols[i].getColumnType());
+			tc.addSelectionListener(
+					SelectionListener.widgetSelectedAdapter(e -> columnSelected(tree, treeViewer, comparator, (TreeColumn) e.widget, sortKey)));
+		}
+		if (cols.length > 0) {
+			tree.setSortColumn(tree.getColumn(0));
+			tree.setSortDirection(comparator.isAscending() ? SWT.UP : SWT.DOWN);
+		}
+	}
+
+	private static int toSortKey(int columnType) {
+		return switch (columnType) {
+			case IUColumnConfig.COLUMN_ID -> IUComparator.IU_ID;
+			case IUColumnConfig.COLUMN_VERSION, IUColumnConfig.OLD_COLUMN_VERSION, IUColumnConfig.NEW_COLUMN_VERSION -> IUComparator.IU_VERSION;
+			case IUColumnConfig.COLUMN_PROVIDER -> IUComparator.IU_PROVIDER;
+			default -> IUComparator.IU_NAME;
+		};
+	}
+
+	private void columnSelected(Tree tree, TreeViewer treeViewer, IUComparator comparator, TreeColumn tc, int sortKey) {
+		if (sortKey != comparator.getSortKey()) {
+			comparator.setSortKey(sortKey);
+			comparator.sortAscending();
+			tree.setSortDirection(SWT.UP);
+		} else if (comparator.isAscending()) {
+			comparator.sortDescending();
+			tree.setSortDirection(SWT.DOWN);
+		} else {
+			comparator.sortAscending();
+			tree.setSortDirection(SWT.UP);
+		}
+		tree.setSortColumn(tc);
+		treeViewer.refresh();
 	}
 
 	protected Policy getPolicy() {

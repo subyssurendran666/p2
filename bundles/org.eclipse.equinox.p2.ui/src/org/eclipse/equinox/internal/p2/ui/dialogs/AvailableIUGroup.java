@@ -172,7 +172,7 @@ public class AvailableIUGroup extends StructuredIUGroup {
 		availableIUViewer.setContentProvider(contentProvider);
 
 		// Now the presentation, columns before label provider.
-		setTreeColumns(availableIUViewer.getTree());
+		createSortableTreeColumns(availableIUViewer.getTree(), availableIUViewer, comparator);
 		availableIUViewer.setLabelProvider(labelProvider);
 
 		// Notify the filtered tree so that it can hook listeners on the
@@ -205,18 +205,6 @@ public class AvailableIUGroup extends StructuredIUGroup {
 		availableIUViewer.getControl().addDisposeListener(e -> ProvUI.getProvisioningEventBus(getProvisioningUI().getSession()).removeListener(listener));
 		updateAvailableViewState();
 		return availableIUViewer;
-	}
-
-	private void setTreeColumns(Tree tree) {
-		tree.setHeaderVisible(true);
-
-		IUColumnConfig[] cols = getColumnConfig();
-		for (int i = 0; i < cols.length; i++) {
-			TreeColumn tc = new TreeColumn(tree, SWT.NONE, i);
-			tc.setResizable(true);
-			tc.setText(cols[i].getColumnTitle());
-			tc.setWidth(cols[i].getWidthInPixels(tree));
-		}
 	}
 
 	Object getNewInput() {
