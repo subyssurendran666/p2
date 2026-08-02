@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2007, 2018 IBM Corporation and others.
+ * Copyright (c) 2007, 2026 IBM Corporation and others.
  *
  * This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License 2.0
@@ -16,9 +16,12 @@ package org.eclipse.equinox.internal.p2.ui.dialogs;
 import java.net.URI;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.URIUtil;
+import org.eclipse.equinox.internal.p2.ui.ProvUI;
 import org.eclipse.equinox.internal.p2.ui.ProvUIActivator;
 import org.eclipse.equinox.internal.p2.ui.ProvUIMessages;
 import org.eclipse.equinox.p2.operations.RepositoryTracker;
+import org.eclipse.equinox.p2.repository.IRepositoryManager;
 import org.eclipse.equinox.p2.ui.ProvisioningUI;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -39,6 +42,7 @@ public class RepositoryNameAndLocationDialog extends StatusDialog {
 
 	Button okButton;
 	Text url, nickname;
+	TextAutoCompleteField urlAutoComplete;
 	ProvisioningUI ui;
 	URI location;
 	String name;
@@ -220,10 +224,35 @@ public class RepositoryNameAndLocationDialog extends StatusDialog {
 		target.setTransfer(URLTransfer.getInstance(), FileTransfer.getInstance());
 		target.addDropListener(new TextURLDropAdapter(url, true));
 		url.addModifyListener(e -> validateRepositoryURL(false));
+		// Offer known repository locations as content assist, including ones theuser has disabled or previously removed, 
+		// so re-adding a familiar site doesn't require retyping or re-finding the URL.
+		urlAutoComplete = new TextAutoCompleteField(url);
+		urlAutoComplete.setProposalStrings(getKnownLocationProposals());
 		initialURL = getInitialLocationText();
 		url.setText(initialURL);
 		url.setSelection(0, url.getText().length());
 		return url;
+	}
+
+	/**
+	 * Return the locations of disabled repositories as content assist proposal
+	 * strings for the location field. Only disabled repositories are included —
+	 * enabled ones are already accessible via the "Work with:" combo on the
+	 * Available Software page and do not need to be re-added.
+	 */
+	private String[] getKnownLocationProposals() {
+		int flags = getRepositoryTracker().getMetadataRepositoryFlags()
+				| IRepositoryManager.REPOSITORIES_DISABLED;
+		URI[] disabled = ProvUI.getMetadataRepositoryManager(ui.getSession()).getKnownRepositories(flags);
+		String[] proposals = new String[disabled.length];
+		for (int i = 0; i < disabled.length; i++) {
+			proposals[i] = URIUtil.toUnencodedString(disabled[i]);
+		}
+		return proposals;
+	}
+
+	protected TextAutoCompleteField getUrlAutoComplete() {
+		return urlAutoComplete;
 	}
 
 	protected ProvisioningUI getProvisioningUI() {
